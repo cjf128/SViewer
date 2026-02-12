@@ -1,0 +1,47 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install nuitka
+          pip install -r requirements.txt
+
+      - name: Build with Nuitka
+        run: |
+          python -m nuitka main.py ^
+            --standalone ^
+            --enable-plugin=pyside6 ^
+            --enable-plugin=numpy ^
+            --include-data-dir=model=model ^
+            --include-data-dir=icons=icons ^
+            --assume-yes
+
+      - name: Rename dist folder
+        run: |
+          Rename-Item main.dist SViewer
+
+      - name: Zip output
+        run: |
+          Compress-Archive -Path SViewer\* -DestinationPath SViewer-${{ github.ref_name }}-win-x64.zip
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: SViewer-${{ github.ref_name }}-win-x64.zip

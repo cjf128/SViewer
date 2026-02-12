@@ -14,6 +14,15 @@ SAMS 是一个基于 PySide6 框架开发的跨平台桌面应用程序，专为
 ✅ 医学图像标注与编辑
 ✅ SAM 模型支持的智能标注分割
 
+**文件结构**
+├─.vscode
+├─app
+├─docs
+├─example
+├─icons
+├─model
+├─widgets
+
 ## 安装教程
 
 ### 快速开始
@@ -43,4 +52,5 @@ python main.py
 SAM2 Repository: https://github.com/facebookresearch/segment-anything-2
 
 ONNX-SAM2-Segment-Anything: https://github.com/ibaiGorordo/ONNX-SAM2-Segment-Anything
+
 ---
