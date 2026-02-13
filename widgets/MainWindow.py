@@ -63,7 +63,7 @@ class SegmentApp(QMainWindow):
         self.sam2 = SAM2Image(encoder_model_path, decoder_model_path)
 
         self.init_size()
-        self.setWindowTitle("MRI图像单器官半自动分割软件v1.1.0")
+        self.setWindowTitle("基于 Segment Anything Model 2 的医学图像单器官交互式标注软件v1.1.1")
 
         self.config_tools()
         self.config_Layout()
