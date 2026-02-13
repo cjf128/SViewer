@@ -7,7 +7,7 @@ import SimpleITK as sitk
 import cv2
 import numpy as np
 from PySide6.QtCore import Signal, QPoint, Qt, QSize
-from PySide6.QtGui import QIcon, QKeySequence, QGuiApplication, QPixmap, QAction
+from PySide6.QtGui import QIcon, QKeySequence, QGuiApplication, QPixmap, QAction, QImage
 from PySide6.QtWidgets import QMainWindow, QToolBar, QHBoxLayout, QLabel, QVBoxLayout, QStackedWidget, \
     QToolButton, QSizePolicy, QSplitter, QWidget, QFileDialog, QMessageBox, QApplication
 
@@ -63,7 +63,7 @@ class SegmentApp(QMainWindow):
         self.sam2 = SAM2Image(encoder_model_path, decoder_model_path)
 
         self.init_size()
-        self.setWindowTitle("MRI图像单器官半自动分割软件v4.1.0")
+        self.setWindowTitle("MRI图像单器官半自动分割软件v1.1.0")
 
         self.config_tools()
         self.config_Layout()
@@ -604,6 +604,9 @@ class SegmentApp(QMainWindow):
             self.image.scene.setSceneRect(self.image.scene.itemsBoundingRect())
             self.image.fitInView(self.image.pixmap_item, Qt.KeepAspectRatio)
             self.reload = False
+        
+        if self.load:
+            self.load = False
     
     def get_window_config(self):
         return AppConfig(
@@ -753,11 +756,16 @@ class SegmentApp(QMainWindow):
                 new_im = new_ct
 
         if self.image_state == 3:
-            new_im = cv2.addWeighted(new_ct, 1, new_pre, self.alpha, 0)
+            mask = pre > 0
+            mask = np.stack([mask]*3, axis=-1)
+            new_im = np.where(
+                mask,
+                cv2.addWeighted(new_ct, 1-self.alpha, new_pre, self.alpha, 0),
+                new_ct
+            )
 
         height, width, channels = new_im.shape
         bytes_per_line = channels * width
-        from PySide6.QtGui import QImage
         pre_image = QImage(new_im.data, width, height, bytes_per_line, QImage.Format_RGB888)
         pre_image = QPixmap.fromImage(pre_image)
         return pre_image

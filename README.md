@@ -1,12 +1,12 @@
-# [SAMS] - 基于 Segment Anything Model 的医学图像交互式标注软件
+# [SViewer] - 基于 Segment Anything Model 2 的医学图像交互式标注软件
 
-[![PySide6](https://img.shields.io/badge/PySide-6.10.2+-green.svg)](https://pypi.org/project/PySide6/)
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-GPLv3-red.svg)](LICENSE)
+[![PySide6](https://img.shields.io/badge/PySide-6.9+-green.svg)](https://pypi.org/project/PySide6/) [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/) [![License](https://img.shields.io/badge/License-Apache2.0-red.svg)](LICENSE)
+
+![alt text](asset/MainWindow.png)
 
 ## 项目简介
 
-SAMS 是一个基于 PySide6 框架开发的跨平台桌面应用程序，专为处理 nii.gz 格式的医学图像设计。该软件提供了强大的功能来显示、调整窗宽窗位（调窗）和对医学图像进行标注。结合Segment Anything Model 2 的强大能力，用户可以实现高精度的自动分割与手动精细调整相结合的高效标注流程。
+SViewer 是一个基于 PySide6 框架开发的跨平台桌面应用程序，专为处理 nii.gz 格式的医学图像设计。该软件提供了强大的功能来显示、调整窗宽窗位（调窗）和对医学图像进行标注。结合Segment Anything Model 2 的强大能力，用户可以实现高精度的自动分割与手动精细调整相结合的高效标注流程。
 
 **功能特性**
 ✅ 图形界面交互
@@ -15,6 +15,8 @@ SAMS 是一个基于 PySide6 框架开发的跨平台桌面应用程序，专为
 ✅ SAM 模型支持的智能标注分割
 
 **文件结构**
+
+```bash
 ├─.vscode
 ├─app
 ├─docs
@@ -22,6 +24,7 @@ SAMS 是一个基于 PySide6 框架开发的跨平台桌面应用程序，专为
 ├─icons
 ├─model
 ├─widgets
+```
 
 ## 安装教程
 
@@ -48,7 +51,13 @@ pip install -r requirements.txt
 # 运行程序
 python main.py
 ```
+
+# 数据集下载
+
+https://www.kaggle.com/datasets/oldyan/task09-spleen
+
 # 参考:
+
 SAM2 Repository: https://github.com/facebookresearch/segment-anything-2
 
 ONNX-SAM2-Segment-Anything: https://github.com/ibaiGorordo/ONNX-SAM2-Segment-Anything
