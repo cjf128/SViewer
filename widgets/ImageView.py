@@ -15,7 +15,7 @@ class ImageViewer(QGraphicsView):
         self.input_box = []
         self.parent = parent
 
-        self.wheel = True
+        self.wheel = False
         self.press = False
         self.move_state = False
         self.frame = False
@@ -197,13 +197,23 @@ class ImageViewer(QGraphicsView):
 
     def wheelEvent(self, event):
         factor = 1.15
-        if event.modifiers() == Qt.ControlModifier and self.wheel:
+        if event.modifiers() == Qt.ControlModifier:
             if event.angleDelta().y() < 0:
                 factor = 1.0 / factor
 
             self.scale(factor, factor)
         
         event.ignore()
+    
+    def enterEvent(self, event):
+        super().enterEvent(event)
+
+        self.wheel = True
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event) 
+
+        self.wheel = False
 
 
 if __name__ == "__main__":

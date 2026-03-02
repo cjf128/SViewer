@@ -1,22 +1,36 @@
-import os
-import sys
 import copy
+import os
 import re
+import sys
 import threading
-import SimpleITK as sitk
+
 import cv2
 import numpy as np
-from PySide6.QtCore import Signal, QPoint, Qt, QSize
-from PySide6.QtGui import QIcon, QKeySequence, QGuiApplication, QPixmap, QAction, QImage
-from PySide6.QtWidgets import QMainWindow, QToolBar, QHBoxLayout, QLabel, QVBoxLayout, QStackedWidget, \
-    QToolButton, QSizePolicy, QSplitter, QWidget, QFileDialog, QMessageBox, QApplication
+import SimpleITK as sitk
+from PySide6.QtCore import QPoint, QSize, Qt, Signal
+from PySide6.QtGui import QAction, QGuiApplication, QIcon, QImage, QKeySequence, QPixmap
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QSizePolicy,
+    QSplitter,
+    QStackedWidget,
+    QToolBar,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.config import AppConfig
+from path import BASE_PATH
+from sam2 import SAM2Image
 from widgets.ImageView import ImageViewer
 from widgets.PopDialog import pop_dialog
 from widgets.SideBar import Sidebar
-from path import BASE_PATH
-from sam2 import SAM2Image
 
 
 class SegmentApp(QMainWindow):
@@ -29,8 +43,8 @@ class SegmentApp(QMainWindow):
 
         self.num = -1
         self.alpha = 0.3
-        self.win_width = 300
-        self.win_level = 50
+        self.win_width = 400
+        self.win_level = 40
         self.angle = 0
 
         self.image_state = 3
@@ -54,7 +68,7 @@ class SegmentApp(QMainWindow):
         self.reload = False
 
         self._dragPosition = QPoint()
-        self.filepath = ''
+        self.filepath = ""
 
         self.sam_checkpoint = BASE_PATH / "model" / "mobile_sam.pt"
         encoder_model_path = BASE_PATH / "model" / "sam2.1_hiera_base_plus_encoder.onnx"
@@ -63,15 +77,16 @@ class SegmentApp(QMainWindow):
         self.sam2 = SAM2Image(encoder_model_path, decoder_model_path)
 
         self.init_size()
-        self.setWindowTitle("基于 Segment Anything Model 2 的医学图像单器官交互式标注软件v1.1.1")
+        self.setWindowTitle(
+            "基于 Segment Anything Model 2 的医学图像单器官交互式标注软件v1.1.1"
+        )
 
         self.config_tools()
         self.config_Layout()
         self.config_connectAction()
-    
+
     def init_size(self):
         self.resize(self.config.width, self.config.height)
-
 
     def config_tools(self):
         """
@@ -84,52 +99,76 @@ class SegmentApp(QMainWindow):
         self.tool_bar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.tool_bar.setIconSize(QSize(28, 28))
 
-        self.load_action = QAction(QIcon(str(BASE_PATH/'icons'/'folder-add-outline.svg')), '导入', self)
-        self.load_action.setShortcut(QKeySequence('Ctrl+O'))
+        self.load_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "folder-add-outline.svg")), "导入", self
+        )
+        self.load_action.setShortcut(QKeySequence("Ctrl+O"))
         self.tool_bar.addAction(self.load_action)
 
-        self.save_action = QAction(QIcon(str(BASE_PATH/'icons'/'save-outline.svg')), "保存", self)
-        self.save_action.setShortcut(QKeySequence('Ctrl+S'))
+        self.save_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "save-outline.svg")), "保存", self
+        )
+        self.save_action.setShortcut(QKeySequence("Ctrl+S"))
         self.tool_bar.addAction(self.save_action)
 
-        self.side_action = QAction(QIcon(str(BASE_PATH/'icons'/'layout-outline.svg')), "侧栏", self)
+        self.side_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "layout-outline.svg")), "侧栏", self
+        )
         self.tool_bar.addAction(self.side_action)
 
-        self.move_action = QAction(QIcon(str(BASE_PATH/'icons'/'plus-outline.svg')), "翻图", self)
+        self.move_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "plus-outline.svg")), "翻图", self
+        )
         self.move_action.setCheckable(True)
         self.move_action.setChecked(True)
-        self.move_action.setShortcut(QKeySequence('Ctrl+M'))
+        self.move_action.setShortcut(QKeySequence("Ctrl+M"))
         self.tool_bar.addAction(self.move_action)
 
-        self.win_action = QAction(QIcon(str(BASE_PATH/"icons"/"smiling-face-outline.svg")), "调窗", self)
+        self.win_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "smiling-face-outline.svg")), "调窗", self
+        )
         self.win_action.setCheckable(True)
         self.win_action.setShortcut(QKeySequence("Ctrl+T"))
         self.tool_bar.addAction(self.win_action)
 
-        self.line_action = QAction(QIcon(str(BASE_PATH/"icons"/"radio-button-off-outline.svg")), '画笔', self)
+        self.line_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "radio-button-off-outline.svg")),
+            "画笔",
+            self,
+        )
         self.line_action.setCheckable(True)
-        self.line_action.setShortcut(QKeySequence('Ctrl+W'))
+        self.line_action.setShortcut(QKeySequence("Ctrl+W"))
         self.tool_bar.addAction(self.line_action)
 
-        self.frame_action = QAction(QIcon(str(BASE_PATH/"icons"/"square-outline.svg")), 'SAM', self)
+        self.frame_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "square-outline.svg")), "SAM", self
+        )
         self.frame_action.setCheckable(True)
-        self.frame_action.setShortcut(QKeySequence('Ctrl+F'))
+        self.frame_action.setShortcut(QKeySequence("Ctrl+F"))
         self.tool_bar.addAction(self.frame_action)
 
-        self.operation_action = QAction(QIcon(str(BASE_PATH/"icons"/"play-circle-outline.svg")), "运算", self)
-        self.operation_action.setShortcut(QKeySequence('Ctrl+P'))
+        self.operation_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "play-circle-outline.svg")), "运算", self
+        )
+        self.operation_action.setShortcut(QKeySequence("Ctrl+P"))
         self.tool_bar.addAction(self.operation_action)
 
-        self.switch_action = QAction(QIcon(str(BASE_PATH/"icons"/"copy-outline.svg")), '转换', self)
-        self.switch_action.setShortcut(QKeySequence('Ctrl+G'))
+        self.switch_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "copy-outline.svg")), "转换", self
+        )
+        self.switch_action.setShortcut(QKeySequence("Ctrl+G"))
         self.tool_bar.addAction(self.switch_action)
 
-        self.reset_action = QAction(QIcon(str(BASE_PATH/"icons"/"refresh-outline.svg")), '复位', self)
-        self.reset_action.setShortcut(QKeySequence('Ctrl+B'))
+        self.reset_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "refresh-outline.svg")), "复位", self
+        )
+        self.reset_action.setShortcut(QKeySequence("Ctrl+B"))
         self.tool_bar.addAction(self.reset_action)
 
-        self.redo_action = QAction(QIcon(str(BASE_PATH/"icons"/"sync-outline.svg")), "重做", self)
-        self.redo_action.setShortcut(QKeySequence('Ctrl+R'))
+        self.redo_action = QAction(
+            QIcon(str(BASE_PATH / "icons" / "sync-outline.svg")), "重做", self
+        )
+        self.redo_action.setShortcut(QKeySequence("Ctrl+R"))
         self.tool_bar.addAction(self.redo_action)
 
     def config_Layout(self):
@@ -157,12 +196,20 @@ class SegmentApp(QMainWindow):
         self.up_left_text.setFixedHeight(25)
         self.update_text()
 
-        anti_rotate = QAction(QIcon(str(BASE_PATH/'icons'/'corner-up-left-outline.svg')), '逆时针旋转', self)  # 图标路径
+        anti_rotate = QAction(
+            QIcon(str(BASE_PATH / "icons" / "corner-up-left-outline.svg")),
+            "逆时针旋转",
+            self,
+        )  # 图标路径
         self.anti_rotate_button = QToolButton()
         self.anti_rotate_button.setDefaultAction(anti_rotate)
         self.anti_rotate_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
 
-        clock_rotate = QAction(QIcon(str(BASE_PATH/'icons'/'corner-up-right-outline.svg')), '顺时针旋转', self)  # 图标路径
+        clock_rotate = QAction(
+            QIcon(str(BASE_PATH / "icons" / "corner-up-right-outline.svg")),
+            "顺时针旋转",
+            self,
+        )  # 图标路径
         self.clock_rotate_button = QToolButton()
         self.clock_rotate_button.setDefaultAction(clock_rotate)
         self.clock_rotate_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
@@ -230,8 +277,12 @@ class SegmentApp(QMainWindow):
 
         self.sidebar.file_widget.tree_view.doubleClicked.connect(self.load_slot)
 
-        self.sidebar.win_width_slider.spin_box.valueChanged.connect(self.change_win_width)
-        self.sidebar.win_level_slider.spin_box.valueChanged.connect(self.change_win_level)
+        self.sidebar.win_width_slider.spin_box.valueChanged.connect(
+            self.change_win_width
+        )
+        self.sidebar.win_level_slider.spin_box.valueChanged.connect(
+            self.change_win_level
+        )
         self.sidebar.alpha_slider.spin_box.valueChanged.connect(self.change_alpha)
         self.sidebar.ct_layer_slider.spin_box.valueChanged.connect(self.change_ct_layer)
 
@@ -296,24 +347,30 @@ class SegmentApp(QMainWindow):
         """
         导入数据
         """
-        file_path = ''
+        file_path = ""
         if not index:
             # 打开文件对话框
-            file_path, filetype = QFileDialog.getOpenFileName(self, 'Open file', '', "Text Files (*.nii.gz);")
+            file_path, filetype = QFileDialog.getOpenFileName(
+                self, "Open file", "", "Text Files (*.nii.gz, *.nii);"
+            )
         elif index:
             file_path = self.sidebar.file_widget.model.filePath(index)
 
-        if file_path != '' and (file_path.endswith('.nii') or file_path.endswith('.nii.gz')):
+        if file_path != "" and (
+            file_path.endswith(".nii") or file_path.endswith(".nii.gz")
+        ):
             folder_path = os.path.dirname(file_path)
             self.sidebar.file_widget.updateFileList(folder_path)
 
-            cn = re.compile(u"[\u4e00-\u9fa5]")  # 检查中文
+            cn = re.compile("[\u4e00-\u9fa5]")  # 检查中文
             match = cn.search(file_path)
             if match:
-                QMessageBox.warning(self, "警告", "文件路径中不能含有中文", QMessageBox.Ok)
+                QMessageBox.warning(
+                    self, "警告", "文件路径中不能含有中文", QMessageBox.Ok
+                )
             else:
                 self.file_path = file_path
-                self.statusbar.showMessage('已导入文件：' + self.file_path)
+                self.statusbar.showMessage("已导入文件：" + self.file_path)
                 self.exist = True
                 self.load = True
                 self.reload = True
@@ -329,7 +386,7 @@ class SegmentApp(QMainWindow):
         数据初始化
         """
         image = sitk.ReadImage(filepath)
-        image = sitk.DICOMOrient(image, 'LPS')
+        image = sitk.DICOMOrient(image, "LPS")
         self.image.spacing = image.GetSpacing()
         data = sitk.GetArrayFromImage(image)
         trans = [[1, 2, 0], [0, 1, 2], [0, 2, 1]]
@@ -362,11 +419,9 @@ class SegmentApp(QMainWindow):
         保存设置
         """
         if np.any(self.pre_all) and not self.operating:
-            file_, ok = QFileDialog.getSaveFileName(self,
-                                                    "文件保存",
-                                                    self.filepath,
-                                                    "NiFTI(*.nii.gz);;All Files (*)")
-
+            file_, ok = QFileDialog.getSaveFileName(
+                self, "文件保存", self.filepath, "NiFTI(*.nii.gz);;All Files (*)"
+            )
 
             if file_ != "":
                 image = copy.deepcopy(self.pre_all)
@@ -374,7 +429,7 @@ class SegmentApp(QMainWindow):
                 image = np.transpose(image, axes=save[self.index])
 
                 image = sitk.GetImageFromArray(image)
-                self.statusBar().showMessage('已保存文件：' + file_)
+                self.statusBar().showMessage("已保存文件：" + file_)
                 sitk.WriteImage(image, file_)
         else:
             QMessageBox.warning(self, "警告", "无可保存分割图像！", QMessageBox.Ok)
@@ -604,23 +659,24 @@ class SegmentApp(QMainWindow):
             self.image.scene.setSceneRect(self.image.scene.itemsBoundingRect())
             self.image.fitInView(self.image.pixmap_item, Qt.KeepAspectRatio)
             self.reload = False
-        
+
         if self.load:
             self.load = False
-    
+
     def get_window_config(self):
-        return AppConfig(
-            width=self.width(),
-            height=self.height()
-        )
+        return AppConfig(width=self.width(), height=self.height())
 
     def closeEvent(self, event):
         """
         重写关闭事件
         """
-        reply = QMessageBox.question(self, '退出提示',
-                                     "确定退出?", QMessageBox.Yes |
-                                     QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(
+            self,
+            "退出提示",
+            "确定退出?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
 
         if reply == QMessageBox.Yes:
             event.accept()
@@ -638,7 +694,9 @@ class SegmentApp(QMainWindow):
             event.accept()
 
         if self.image.press:
-            self.down_right_text.setText(f"x:{self.image.point_list[0]}; y:{self.image.point_list[1]}")
+            self.down_right_text.setText(
+                f"x:{self.image.point_list[0]}; y:{self.image.point_list[1]}"
+            )
 
     def mouseMoveEvent(self, event):
         """
@@ -660,7 +718,9 @@ class SegmentApp(QMainWindow):
                 self.sidebar.win_level_slider.spin_box.setValue(self.win_level)
 
             if self.image.press:
-                self.down_right_text.setText(f"x:{self.image.point_list[0]}; y:{self.image.point_list[1]}")
+                self.down_right_text.setText(
+                    f"x:{self.image.point_list[0]}; y:{self.image.point_list[1]}"
+                )
                 event.accept()
 
         if self.press and not self.image.press:
@@ -682,9 +742,10 @@ class SegmentApp(QMainWindow):
         鼠标滚动重写，用于切换层数，放缩
         """
         self.setMouseTracking(True)
+        
         angle = event.angleDelta()
 
-        if self.exist and not event.modifiers():
+        if self.exist and not event.modifiers() and self.image.wheel:
             if angle.y() > 0 and self.number < self.ct_all.shape[2] - 1:
                 self.number += 1
                 self.sidebar.ct_layer_slider.spin_box.setValue(self.number)
@@ -757,16 +818,18 @@ class SegmentApp(QMainWindow):
 
         if self.image_state == 3:
             mask = pre > 0
-            mask = np.stack([mask]*3, axis=-1)
+            mask = np.stack([mask] * 3, axis=-1)
             new_im = np.where(
                 mask,
-                cv2.addWeighted(new_ct, 1-self.alpha, new_pre, self.alpha, 0),
-                new_ct
+                cv2.addWeighted(new_ct, 1 - self.alpha, new_pre, self.alpha, 0),
+                new_ct,
             )
 
         height, width, channels = new_im.shape
         bytes_per_line = channels * width
-        pre_image = QImage(new_im.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        pre_image = QImage(
+            new_im.data, width, height, bytes_per_line, QImage.Format_RGB888
+        )
         pre_image = QPixmap.fromImage(pre_image)
         return pre_image
 
@@ -774,12 +837,11 @@ class SegmentApp(QMainWindow):
 if __name__ == "__main__":
     QGuiApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QGuiApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
-    QGuiApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
 
     app = QApplication(sys.argv)
     window = SegmentApp()
     window.show()
     sys.exit(app.exec_())
-
-
-
