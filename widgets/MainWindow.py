@@ -77,9 +77,7 @@ class SegmentApp(QMainWindow):
         self.sam2 = SAM2Image(encoder_model_path, decoder_model_path)
 
         self.init_size()
-        self.setWindowTitle(
-            "基于 Segment Anything Model 2 的医学图像单器官交互式标注软件"
-        )
+        self.setWindowTitle("SViewer")
 
         self.config_tools()
         self.config_Layout()
@@ -742,7 +740,7 @@ class SegmentApp(QMainWindow):
         鼠标滚动重写，用于切换层数，放缩
         """
         self.setMouseTracking(True)
-        
+
         angle = event.angleDelta()
 
         if self.exist and not event.modifiers() and self.image.wheel:
