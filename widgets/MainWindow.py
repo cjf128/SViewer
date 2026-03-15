@@ -349,7 +349,7 @@ class SegmentApp(QMainWindow):
         if not index:
             # 打开文件对话框
             file_path, filetype = QFileDialog.getOpenFileName(
-                self, "Open file", "", "Text Files (*.nii.gz, *.nii);"
+                self, "Open file", "", "NIfTI Files (*.nii *.nii.gz);"
             )
         elif index:
             file_path = self.sidebar.file_widget.model.filePath(index)
